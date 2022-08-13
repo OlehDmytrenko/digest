@@ -4,7 +4,6 @@ const fse = require('fs-extra')
 const path = require('path')
 const os = require('os')
 const execa = require("execa")
-const download = require("./download")
 
 const run = async () => {
 
@@ -12,8 +11,6 @@ const run = async () => {
 	console.log(`MOLFAR SENTIMENT ANALYZER SERVICE POSTINSTALL`)
 
 	console.log(`Install ${config.lang} Sentiment Analyser`)
-
-
 
 	// console.log(`Clone ${config.repo}`)
 	// await ( async () =>{
@@ -35,16 +32,6 @@ const run = async () => {
 		} catch(error) {
 			console.log(error)
 		}
-	})()
-
-	console.log(`Install Fasttext model for ${config.lang} language`)
-
-	await ( async () => {
-		try {
-			await download(config.modelUrl, "./model.ftz")
-		} catch(error) {
-			console.log(error)
-		}	
 	})()
 
 	console.log(`Molfar Sentiment Analyzer(${config.lang}) service successfully deployed`) 

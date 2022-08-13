@@ -1,57 +1,87 @@
 
 import json
-import os
 import io
 import sys
 import warnings
 import traceback
-import fasttext
+import numpy
+from sklearn.cluster import KMeans
 
 warnings.filterwarnings("ignore", message=r"\[W033\]", category=UserWarning)
 
-input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')   
 
-model_name = sys.argv[1]
-model = fasttext.load_model(model_name)
-    
-    
-
-
-def main(input_json):
-
-    text = input_json["text"]
-    predict = model.predict(text, k = 2)
-    
-    if (predict[0][0] == '__label__pos') and (predict[1][0] >= 0.9):
-        emotion = "positive"
-    elif (predict[0][0] == '__label__neg') and (predict[1][0] >= 0.9):
-        emotion = "negative"
-    else:
-        emotion = "unrecognised"
-    
+def accumulate_keywords(input_json, set_keywords):
+    keywords = input_json["keywords"].split(" ")
+    set_keywords = set_keywords+keywords
+    return set_keywords, {}
+        
+def return_keywords(input_json, set_keywords):
+    set_keywords_ = ""
+    for keyword in set(set_keywords):
+        set_keywords_ = set_keywords_ + keyword + " "
     return {
-                "emotion": emotion,
-                "classes": {
-                    predict[0][0]: float(predict[1][0]),
-                    predict[0][1]: float(predict[1][1])
-                }
+                "set_keywords": str(set_keywords_)[:-1]
             }
     
+def vector(input_json, set_keywords):
+        set_keywords = input_json["set_keywords"].split(" ")
+        keywords = input_json["keywords"].split(" ")
+        vector = ""
+        for keyword in set_keywords:
+            if keyword in keywords:
+                vector += "1 "
+            else:
+                vector += "0 "
+        return {
+                    "vector": str(vector[:-1])
+                }
     
-
+def accumulate_vectors(input_json, vectors, docsID):
+        ID = input_json["id"]
+        docsID.append(ID)
+        vector = (input_json["vector"].split(" "))
+        vectors.append([int(v) for v in vector])
+        return vectors, docsID, {}
+        
+def cluster(input_json, vectors, docsID):
+        n_clusters = int(input_json["n_clusters"])
+        M = numpy.array(vectors)
+        clustersID = dict.fromkeys(docsID)
+        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(M)
+        clusters = kmeans.predict(M)
+        for index in range(len(docsID)):
+            clustersID[docsID[index]] = clusters[index]
+        return {
+                    "clusters": str(clustersID)
+                }
 
 if __name__=='__main__':
     
-
     input_json = None
+    
+    docsID = []
+    vectors = []
+    set_keywords = []
     for line in input_stream:
         
         # read json from stdin
         input_json = json.loads(line)
         
         try:
+            command = input_json["command"]
             
-            output = main(input_json)
+            if command == "accumulate_keywords":
+                set_keywords, output = accumulate_keywords(input_json, set_keywords)
+            elif command == "return_keywords":
+                output = return_keywords(input_json, set_keywords)
+            elif command == "vector":
+                output = vector(input_json, set_keywords)
+            elif command == "accumulate_vectors":
+                vectors, docsID, output = accumulate_vectors(input_json, vectors, docsID)
+            elif command == "cluster":
+                output = cluster(input_json, vectors, docsID)
+                
         except BaseException as ex:
             ex_type, ex_value, ex_traceback = sys.exc_info()            
             
