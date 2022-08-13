@@ -4,57 +4,12 @@ import io
 import sys
 import warnings
 import traceback
-import numpy
-from sklearn.cluster import KMeans
+import accumlateKeywords, getKeywords
+import buildVertor, accumulateVector, clustering
 
 warnings.filterwarnings("ignore", message=r"\[W033\]", category=UserWarning)
 
-input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')   
-
-def accumulate_keywords(input_json, set_keywords):
-    keywords = input_json["keywords"].split(" ")
-    set_keywords = set_keywords+keywords
-    return set_keywords, {}
-        
-def return_keywords(input_json, set_keywords):
-    set_keywords_ = ""
-    for keyword in set(set_keywords):
-        set_keywords_ = set_keywords_ + keyword + " "
-    return {
-                "set_keywords": str(set_keywords_)[:-1]
-            }
-    
-def vector(input_json, set_keywords):
-        set_keywords = input_json["set_keywords"].split(" ")
-        keywords = input_json["keywords"].split(" ")
-        vector = ""
-        for keyword in set_keywords:
-            if keyword in keywords:
-                vector += "1 "
-            else:
-                vector += "0 "
-        return {
-                    "vector": str(vector[:-1])
-                }
-    
-def accumulate_vectors(input_json, vectors, docsID):
-        ID = input_json["id"]
-        docsID.append(ID)
-        vector = (input_json["vector"].split(" "))
-        vectors.append([int(v) for v in vector])
-        return vectors, docsID, {}
-        
-def cluster(input_json, vectors, docsID):
-        n_clusters = int(input_json["n_clusters"])
-        M = numpy.array(vectors)
-        clustersID = dict.fromkeys(docsID)
-        kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(M)
-        clusters = kmeans.predict(M)
-        for index in range(len(docsID)):
-            clustersID[docsID[index]] = clusters[index]
-        return {
-                    "clusters": str(clustersID)
-                }
+input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
 
 if __name__=='__main__':
     
@@ -72,15 +27,23 @@ if __name__=='__main__':
             command = input_json["command"]
             
             if command == "accumulate_keywords":
-                set_keywords, output = accumulate_keywords(input_json, set_keywords)
-            elif command == "return_keywords":
-                output = return_keywords(input_json, set_keywords)
+                set_keywords = accumlateKeywords.accumulate(input_json["keywords"], set_keywords)
+                output = {}
+            elif command == "get_keywords":
+                output = {
+                            "set_keywords": getKeywords.get(set_keywords)
+                        }
             elif command == "vector":
-                output = vector(input_json, set_keywords)
+                output = {
+                            "vector": buildVertor.build(input_json["keywords"], set_keywords)
+                        }
             elif command == "accumulate_vectors":
-                vectors, docsID, output = accumulate_vectors(input_json, vectors, docsID)
+                vectors, docsID = accumulateVector.accumulate(input_json["id"], input_json["vector"], vectors, docsID)
+                output = {}
             elif command == "cluster":
-                output = cluster(input_json, vectors, docsID)
+                output = {
+                            "clusters": clustering.cluster(input_json["n_clusters"], vectors, docsID)
+                        }
                 
         except BaseException as ex:
             ex_type, ex_value, ex_traceback = sys.exc_info()            
