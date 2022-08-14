@@ -4,8 +4,7 @@ import io
 import sys
 import warnings
 import traceback
-import accumlateKeywords, getKeywords
-import buildVertor, accumulateVector, clustering
+import accumlateKeywords, getKeywords, buildVertor, accumulateVector, clustering
 
 warnings.filterwarnings("ignore", message=r"\[W033\]", category=UserWarning)
 
