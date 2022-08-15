@@ -52,8 +52,7 @@ if __name__=='__main__':
             output['error'] += "Exception message : %s\n" %ex_value
             output['error'] += "Exception traceback : %s\n" %"".join(traceback.TracebackException.from_exception(ex).format())
             
-            
-        
+
         output_json = json.dumps(output, ensure_ascii=False).encode('utf-8')
         sys.stdout.buffer.write(output_json)
         print()

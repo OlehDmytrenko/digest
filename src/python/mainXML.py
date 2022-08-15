@@ -8,10 +8,8 @@ import traceback
 import accumlateKeywords, buildVertor, accumulateVector, clustering
 import re
 
-#xmlFile = sys.argv[1]
-#n_clusters = sys.argv[2]
-xmlFile = "/Users/dmytrenko.o/Desktop/python/ex-xml-ok.xml"
-n_clusters = 4
+xmlFile = sys.argv[1]
+n_clusters = sys.argv[2]
 
 warnings.filterwarnings("ignore", message=r"\[W033\]", category=UserWarning)
 
@@ -23,7 +21,7 @@ if __name__=='__main__':
     for line in f:
         try:
             doc = doc + line
-            if line == "</sphinx:document>\n":
+            if line[0:18] == "</sphinx:document>":
                 set_keywords = accumlateKeywords.accumulate(re.findall("<keyword>(.+?)</keyword>+?", doc)[0], set_keywords)
                 doc = "" 
         except BaseException as ex:
@@ -41,10 +39,9 @@ if __name__=='__main__':
     for line in f:
         try:
             doc = doc + line
-            if line == "</sphinx:document>\n":
+            if line[0:18] == "</sphinx:document>":
                 vector = buildVertor.build(re.findall("<keyword>(.+?)</keyword>+?", doc)[0], set_keywords)
                 vectors, docsID = accumulateVector.accumulate(re.findall("<sphinx:document id=(.+?)>+?", doc)[0][1:-1], vector, vectors, docsID)
-                
                 doc = "" 
                 
         except BaseException as ex:
@@ -55,7 +52,16 @@ if __name__=='__main__':
             output['error'] += "Exception message : %s\n" %ex_value
             output['error'] += "Exception traceback : %s\n" %"".join(traceback.TracebackException.from_exception(ex).format())
     
-
-    print (clustering.cluster(n_clusters, vectors, docsID))
+    try:
+        output = clustering.cluster(n_clusters, vectors, docsID)
+    except BaseException as ex:
+        ex_type, ex_value, ex_traceback = sys.exc_info()            
         
+        output = {"error": ''}           
+        output['error'] += "Exception type : %s; \n" % ex_type.__name__
+        output['error'] += "Exception message : %s\n" %ex_value
+        output['error'] += "Exception traceback : %s\n" %"".join(traceback.TracebackException.from_exception(ex).format())
+    
+    output_json = json.dumps(output, ensure_ascii=False).encode('utf-8')
+    sys.stdout.buffer.write(output_json)
     print()

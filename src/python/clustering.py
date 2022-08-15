@@ -12,11 +12,10 @@ def distortion(M, n_clusters):
     for k in K:
         kmeanModel = KMeans(n_clusters=k, random_state=0).fit(M)
       
-        distortions.append(sum(numpy.min(cdist(M, kmeanModel.cluster_centers_,
-                                            'euclidean'), axis=1)) / M.shape[0])
+        #distortions.append(sum(numpy.min(cdist(M, kmeanModel.cluster_centers_,
+        #                                    'euclidean'), axis=1)) / M.shape[0])
         inertias.append(kmeanModel.inertia_)
-    print (distortions)
-    plt.plot(K, distortions, 'bx-')
+    plt.plot(K, inertias, 'bx-')
     plt.xlabel('Values of K')
     plt.ylabel('Distortion')
     plt.title('The Elbow Method using Distortion')
@@ -32,7 +31,7 @@ def cluster(n_clusters, vectors, docsID):
     M = numpy.array(vectors)
     
     #distortion(M, n_clusters)
-    
+
     kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(M)
     clusters = kmeans.predict(M)
     centers = kmeans.cluster_centers_
@@ -40,6 +39,6 @@ def cluster(n_clusters, vectors, docsID):
         digest[clusters[index]][docsID[index]] = cdist([M[index]], [centers[clusters[index]]])[0][0]
     sortdigest = {}
     for index in range(n_clusters):
-        sortdigest[index] = {k: v for k, v in sorted(digest[index].items(), key=lambda item: item[1], reverse=True)}
+        sortdigest[index] = {k: v for k, v in sorted(digest[index].items(), key=lambda item: item[1])}
     return str(sortdigest)
     
